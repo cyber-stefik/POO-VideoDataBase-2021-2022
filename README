@@ -1,0 +1,127 @@
+# Copyright Stefanita Ionita, 324CA, 2021-22
+
+Package action:
+********************************************************************************
+
+Action class:
+In action am functia choose care imi adauga initial actiunile intr-un nou array
+de actiuni, deoarece am folosit o parte din ActionInputData, nu toata si am
+format o noua clasa. Verifica apoi pentru fiecare actiune tipul ei si apeleaza
+o functie din clasa corespunzatoare.
+
+Command class:
+Clasa pentru actiuni de tip command: favorite, view, rating. Verifica daca
+functiile apelate returneaza null si in functie de rezultat modifica mesajul
+corespunzator.
+
+Clasa Query:
+Asemanator clasei Command, este o clasa pentru actiuni, in functie de objectType
+si pentru fiecare objectType, am verificat fiecare criteria. Am apelat functiile
+corespunzatoare si am modificat mesajul in functie de rezultate.
+
+Clasa Recommend:
+Asemanator cu ce e mai sus.
+
+Package database:
+********************************************************************************
+
+Clasa Database:
+Am folosit clasa Input pusa la dispozitie si am format clasa aceasta care
+contine toate entitatile. Am adaugat datele de input de la actori, useri samd.
+
+Package entities:
+********************************************************************************
+
+Clasa Actor:
+In aceasta clasa am implementat efectiv metodele care rezolva diversele actiuni.
+    - average: afla average-ul pentru fiecare actor din filmele si serialele in
+              care a jucat si ii ordoneaza corespunzator, iar la final fiind
+              returnat un array de nume;
+    - filterActors: este o functie auxiliara care filtreaza actorii in functie
+                   de action.filters;
+    - setActorAwards: calculeaza numarul de premii al unui actor;
+    - actorAwards: adauga fiecarui actor numarul total de premii, ii ordoneaza
+                  in functie de acestea si returneaza un arraylist de stringuri
+                  care contine numele actorilor;
+    - filterDescription: filtreaza actorii dupa action.filters si returneaza
+                        un arraylist de stringuri care contine numele actorilor;
+
+Clasa Movie:
+In aceasta clasa am implementat efectiv metodele care rezolva diversele actiuni.
+    - getMovie: returneaza un movie cu numele action.getTitle();
+    - favoriteMovie: seteaza numarul de aparente ale unui film in listele de
+                    favorite ale utilizatorilor, sorteaza arraylistul in functie
+                    de acest numar si verifica la final filtrele, pentru a putea
+                    adauga numele filmului intr-un arraylist de stringuri care e
+                    returnat;
+    - mySetIsFavorites: functie auxiliara ce seteaza numarul de aparente ale
+                        unui film in listele de favorite ale utilizatorilor;
+    - longestMovie: ordoneaza filmele in functie de durata, asc sau descendent
+                    si returneaza un arraylist de stringuri ce contine numele
+                    filmelor sortate;
+    - ratingMovies: ordoneaza filmele in functie de grades, asc sau descendent
+                    si returneaza un arraylist de stringuri ce contine numele
+                    filmelor sortate
+    - mySetViews: functie auxiliara ce seteaza numarul de vizionari ale unui
+                film;
+    - mostViewed: ordoneaza filmele in functie de numarul de vizionari, asc sau
+                descendent si returneaza un arraylist de stringuri ce contine
+                numele filmelor sortate;
+
+Clasa Serial:
+In aceasta clasa am implementat efectiv metodele care rezolva diversele actiuni.
+    - getSerial: returneaza un serial cu numele action.getTitle();
+    - getSerialDuration: calculeaza si returneaza durata unui serial;
+    - setSerialViews: calculeaza si seteaza numarul de vizionari ale unui serial
+    - longestSerial: ordoneaza serialele in functie de durata, asc sau
+                     descendent si returneaza un arraylist de stringuri ce
+                     contine numele serialelor sortate;
+    - favoriteSerial: seteaza numarul de aparente ale unui serial in listele de
+                      favorite ale utilizatorilor, sorteaza arraylistul in
+                      functie de acest numar si verifica la final filtrele,
+                      pentru a putea adauga numele serialului intr-un arraylist
+                      de stringuri care este returnat;
+    - ratingSerials: ordoneaza serialele in functie de grades, asc sau
+                     descendent si returneaza un arraylist de stringuri ce
+                     contine numele serialelor sortate;
+    - mostViewedSerial: ordoneaza serialele in functie de numarul de vizionari,
+                        asc sau descendent si returneaza un arraylist de
+                        stringuri ce contine numele serialelor sortate;
+
+Clasa User:
+In aceasta clasa am implementat efectiv metodele care rezolva diversele actiuni.
+
+    - addFavorite: adauga un video in lista de favorite a unui user;
+    - watchMovie: adauga un film in historyul unui user;
+    - watchSerial: adauga un serial in historyul unui user;
+    - rateMovie: ofera un rating unui film;
+    - rateSerial: ofera un rating unui serial;
+    - ratingNumbers: ordoneaza utilizatorii in functie de cate ratinguri au
+                    oferit;
+    - standardRecommendation: returneaza numele primului film/serial nevazut
+                            de utilizator;
+    - searchRecommendation: sorteaza filmele si serialele in ordine crescatoare
+                           dupa rating, apoi adauga filmelele si serialele care
+                           apartin unui gen;
+    - popularRecommendation: adauga toate genurile filmelor/serialelor intr-un
+                            hashmap, unde numele este cheia si numarul de
+                            vizionari este valoarea. Iterez prin toate filmele
+                            si serialele si returneaza primul film/serial (fiind
+                            ordonate in hashmap astfel incat primul film/serial
+                            sa fie cu cele mai multe vizionari;
+    - bestunseenRecommendation: ordoneaza filmele si serialele in functie de
+                               rating si returneaza primul video care nu este
+                               vizionat;
+    - favoriteRecommendation: ordoneaza filmele in functie de numarul de
+                            aparente ale filmelor/serialelor in listele de
+                            favorite ale utilizatorilor si il returneaza pe
+                            primul nevazut;
+    - getUser: returneaza un utilizator cu numele action.getUsername();
+
+Feedback: Enuntul a fost neclar si am stat cateva zile sa-l descifrez.
+O gramada de cazuri speciale de care nu ni s-a spus si, la fel ca mai sus, am
+stat sa le descifrez si sa le caut in ref-uri. Ar fi fost util sa avem mesajele
+pe ocw la toate. Overall a fost fain sa o rezolv, spre final chiar mi-a placut,
+insa pana in acel punct a fost un chin sa inteleg enuntul:)) Poate o sa fie mai
+clar data viitoare. In concluzie, tema misto, dar expunerea putea fi mai buna.
+PS: Mi-au placut serialele si username-urile (*cough* lolies *cough*).
