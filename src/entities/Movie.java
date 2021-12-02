@@ -1,7 +1,6 @@
 package entities;
 import action.Action;
 import database.Database;
-import utils.Utils;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -103,7 +102,11 @@ public final class Movie extends Video {
     }
 
 
-
+    /**
+     * @param database database which contains info about every entity
+     * @param action the action to be executed
+     * @return the movies array filtered
+     */
     public static ArrayList<Movie> filterMovies(final Database database,
                                                 final Action action) {
         ArrayList<Movie> movies = new ArrayList<>(database.getMoviesData());

@@ -8,7 +8,6 @@ import java.util.Objects;
 import java.util.Comparator;
 import java.util.Collections;
 
-import static java.lang.Integer.valueOf;
 
 public final class Serial extends Video {
     private final int numberOfSeasons;
@@ -152,6 +151,11 @@ public final class Serial extends Video {
         this.isFavorite = isFavorite;
     }
 
+    /**
+     * @param database database which contains info about every entity
+     * @param action the action to be executed
+     * @return a filtered Serial array
+     */
     public static ArrayList<Serial> filterSerial(final Database database,
                                                 final Action action) {
         ArrayList<Serial> serials = new ArrayList<>(database.getSerialsData());
@@ -256,8 +260,13 @@ public final class Serial extends Video {
         return titles;
     }
 
-    public static void mySetIsFavoriteSerial(ArrayList<Serial> serials,
-                                  ArrayList<User> users) {
+    /**
+     * @param serials Serials array
+     * @param users Users array
+     * This function calculates the total number of favorite occurrences
+     */
+    public static void mySetIsFavoriteSerial(final ArrayList<Serial> serials,
+                                  final ArrayList<User> users) {
         for (Serial serial : serials) {
             int favorites = 0;
             for (User user : users) {
