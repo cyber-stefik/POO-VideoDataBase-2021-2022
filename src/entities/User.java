@@ -17,6 +17,7 @@ public final class User {
     private final Map<String, Integer> history;
     private final ArrayList<String> favoriteVideos;
     private final ArrayList<String> ratedVideos = new ArrayList<>();
+    private HashMap<String, ArrayList<Integer>> ratedSeasons = new HashMap<>();
 
     public User(final String username, final String subscriptionType,
                 final Map<String, Integer> history,
@@ -27,11 +28,28 @@ public final class User {
         this.history = history;
     }
 
+    public Integer getNumberOfRatings() {
+        return this.ratedVideos.size();
+    }
+
     public User(final User user) {
         this.username = user.getUsername();
         this.subscriptionType = user.getSubscriptionType();
         this.history = user.getHistory();
         this.favoriteVideos = user.getFavoriteVideos();
+    }
+
+    public ArrayList<String> getRatedVideos() {
+        return ratedVideos;
+    }
+
+    public HashMap<String, ArrayList<Integer>> getRatedSeasons() {
+        return ratedSeasons;
+    }
+
+    public void setRatedSeasons(final HashMap<String,
+                                ArrayList<Integer>> ratedSeasons) {
+        this.ratedSeasons = ratedSeasons;
     }
 
     /**
@@ -126,10 +144,10 @@ public final class User {
         // if the user has watched the movie and hasn't rated it yet
         if (user.history.containsKey(videoTitle)
             && !user.ratedVideos.contains(videoTitle)) {
-                if (!ratedVideos.contains(videoTitle)) {
-                    movie.getRatings().add(action.getGrade());
+                if (!user.ratedVideos.contains(videoTitle)) {
                     user.ratedVideos.add(videoTitle);
                 }
+                movie.getRatings().add(grade);
                 movie.getFinalGrade();
                 msg = "success -> " + videoTitle + " was rated with " + grade + " by "
                         + user.getUsername();
@@ -155,23 +173,41 @@ public final class User {
         String videoTitle = action.getTitle();
         double grade;
         // if the user has watched the movie and hasn't rated it yet
-        if (user.history.containsKey(videoTitle)) {
+        if (!user.history.containsKey(videoTitle)) {
+            msg = "error -> " + videoTitle + " is not seen";
+            // if the serial has not been seen yeet
+        } else if (!user.getRatedSeasons().containsKey(videoTitle)) {
             // setting the grade for the serial
             serial.mySetGrade(action);
             // getting the grade to add to serial
             grade = action.getGrade();
             // adding the serial to ratedVideos
             user.ratedVideos.add(serial.getTitle());
+            ArrayList<Integer> array = new ArrayList<>();
+            array.add(action.getSeasonNumber());
+            user.ratedSeasons.put(videoTitle, array);
             int index = action.getSeasonNumber() - 1;
             serial.getSeasons().get(index).getRatings().add(grade);
             msg = "success -> " + videoTitle + " was rated with " + grade + " by "
                     + user.getUsername();
+//            serial.getSeasons().get(index).getRatings().add(grade);
+        } else if (user.getRatedSeasons().containsKey(videoTitle)
+                    && !user.getRatedSeasons().get(videoTitle).contains(action.getSeasonNumber())) {
+            // setting the grade for the serial
+            serial.mySetGrade(action);
+            // getting the grade to add to serial
+            grade = action.getGrade();
+            // adding the serial to ratedVideos
+            user.ratedVideos.add(serial.getTitle());
+            user.ratedSeasons.get(videoTitle).add(action.getSeasonNumber());
+            int index = action.getSeasonNumber() - 1;
+            serial.getSeasons().get(index).getRatings().add(grade);
+            msg = "success -> " + videoTitle + " was rated with " + grade + " by "
+                    + user.getUsername();
+//            serial.getSeasons().get(index).getRatings().add(grade);
         // if the serial has already been rated
-        } else if (user.ratedVideos.contains(videoTitle)) {
-            msg = "error -> " + videoTitle + " has been already rated";
-        // if the serial has not been seen yeet
         } else {
-            msg = "error -> " + videoTitle + " is not seen";
+            msg = "error -> " + videoTitle + " has been already rated";
         }
         return msg;
     }
@@ -183,22 +219,29 @@ public final class User {
      */
     public static ArrayList<String> ratingNumbers(final Database database,
                                                   final Action action) {
-        ArrayList<User> users = database.getUsersData();
-        ArrayList<String> toReturn = new ArrayList<>();
+        ArrayList<User> users = new ArrayList<>(database.getUsersData());
+        ArrayList<String> titles = new ArrayList<>();
         String sortType = action.getSortType();
         // sorting by how many ratings a user has given
-        users.sort(Comparator.comparingDouble(u -> u.ratedVideos.size()));
+        users.sort(Comparator.comparingInt(User::getNumberOfRatings)
+                                            .thenComparing(User::getUsername));
         // if sort type is desc, reverse the arraylist
         if (!sortType.equals("asc")) {
             Collections.reverse(users);
         }
         // adding to an arraylist of strings
+        int i = 0;
         for (User user : users) {
-            if (user.ratedVideos.size() != 0) {
-                toReturn.add(user.getUsername());
+            if (i == action.getNumber()) {
+                break;
+            } else {
+                if (user.ratedVideos.size() != 0) {
+                    i++;
+                    titles.add(user.getUsername());
+                }
             }
         }
-        return toReturn;
+        return titles;
     }
 
     /**
@@ -209,9 +252,9 @@ public final class User {
      */
     public static String standardRecommendation(final Database database,
                                                 final Action action) {
-        ArrayList<User> users = database.getUsersData();
-        ArrayList<Movie> movies = database.getMoviesData();
-        ArrayList<Serial> serials = database.getSerialsData();
+        ArrayList<User> users = new ArrayList<>(database.getUsersData());
+        ArrayList<Movie> movies = new ArrayList<>(database.getMoviesData());
+        ArrayList<Serial> serials = new ArrayList<>(database.getSerialsData());
         User userGood = null;
         // getting the user and use the copy constructor
         for (User user : users) {
@@ -246,9 +289,9 @@ public final class User {
      */
     public static ArrayList<String> searchRecommendation(final Database database,
                                                          final Action action) {
-        ArrayList<User> users = database.getUsersData();
-        ArrayList<Movie> movies = database.getMoviesData();
-        ArrayList<Serial> serials = database.getSerialsData();
+        ArrayList<User> users = new ArrayList<>(database.getUsersData());
+        ArrayList<Movie> movies = new ArrayList<>(database.getMoviesData());
+        ArrayList<Serial> serials = new ArrayList<>(database.getSerialsData());
         User userGood = null;
         for (User user : users) {
             if (user.getUsername().equals(action.getUsername())) {
@@ -259,34 +302,37 @@ public final class User {
         if (!userGood.getSubscriptionType().equals("PREMIUM")) {
             return null;
         }
-        // sorting movies by the movie grade
-        Comparator<Movie> comparator;
-        comparator = Comparator.comparing(Movie::getGrade);
-        // 2nd criteria is the title
-        comparator = comparator.thenComparing(Video::getTitle);
-        movies.sort(comparator);
-
-        // sorting serial by the serial grade
-        Comparator<Serial> comparator2;
-        comparator2 = Comparator.comparing(Serial::getGrade);
-        // 2nd criteria is the title
-        comparator2 = comparator2.thenComparing(Video::getTitle);
-        serials.sort(comparator2);
-        ArrayList<String> titles = new ArrayList<>();
-        // iterate through the movies
+        movies.removeIf(movie ->
+                        !movie.getGenres().contains(action.getGenre()));
+        serials.removeIf(serial ->
+                        !serial.getGenres().contains(action.getGenre()));
         for (Movie movie : movies) {
-            // check the genre and if the user has already seen the movie
-            if (movie.getGenres().contains(action.getGenre())
-                && !userGood.getHistory().containsKey(movie.getTitle())) {
-                titles.add(movie.getTitle());
+            movie.getFinalGrade();
+        }
+        for (Serial serial : serials) {
+            serial.myGetGrade();
+        }
+        ArrayList<Video> videos = new ArrayList<>(movies);
+        videos.addAll(serials);
+        for (Video video : videos) {
+            if (video instanceof Movie) {
+                video.setVideoGrade(((Movie) video).getGrade());
+            } else if (video instanceof Serial) {
+                video.setVideoGrade(((Serial) video).getGrade());
             }
         }
-        // iterate through the serials
-        for (Serial serial : serials) {
-            // check the genre and if the user has already seen the serial
-            if (serial.getGenres().contains(action.getGenre())
-                && !userGood.getHistory().containsKey(serial.getTitle())) {
-                titles.add(serial.getTitle());
+        // sorting movies by the movie grade
+        Comparator<Video> comparator;
+        comparator = Comparator.comparing(Video::getVideoGrade);
+        // 2nd criteria is the title
+        comparator = comparator.thenComparing(Video::getTitle);
+        videos.sort(comparator);
+        // iterate through the movies
+        ArrayList<String> titles = new ArrayList<>();
+        for (Video video : videos) {
+            if (video.getGenres().contains(action.getGenre())
+                && !userGood.getHistory().containsKey(video.getTitle())) {
+                titles.add(video.getTitle());
             }
         }
         return titles;
@@ -299,8 +345,8 @@ public final class User {
      */
     public static String popularRecommendation(final Database database,
                                                final Action action) {
-        ArrayList<User> users = database.getUsersData();
-        ArrayList<Movie> movies = database.getMoviesData();
+        ArrayList<User> users = new ArrayList<>(database.getUsersData());
+        ArrayList<Movie> movies = new ArrayList<>(database.getMoviesData());
         User userGood = null;
         HashMap<String, Integer> genres = new HashMap<>();
         for (User user : users) {
@@ -385,24 +431,20 @@ public final class User {
         for (HashMap.Entry<String, Integer> title : map) {
             titles.add(title.getKey());
         }
-
-        for (Movie movie : movies) {
-            for (String title : titles) {
-                // if the user has seen a movie of a certain genre
-                if (userGood.getHistory().containsKey(movie.getTitle())) {
-                    break;
-                } else if (!movie.getGenres().contains(title)) {
+        for (String title : titles) {
+            for (Movie movie : movies) {
+                if (movie.getGenres().contains(title)
+                    && !userGood.getHistory().containsKey(movie.getTitle())) {
                     return movie.getTitle();
                 }
             }
         }
 
-        for (Serial serial : serials) {
-            for (String title : titles) {
+        for (String title : titles) {
+            for (Serial serial : serials) {
                 // if the user has seen a serial of a certain genre
-                if (userGood.getHistory().containsKey(serial.getTitle())) {
-                    break;
-                } else if (!serial.getGenres().contains(title)) {
+                if (serial.getGenres().contains(title)
+                    && !userGood.getHistory().containsKey(serial.getTitle())) {
                     return serial.getTitle();
                 }
             }
@@ -416,9 +458,9 @@ public final class User {
      */
     public static String bestunseenRecommendation(final Database database,
                                                   final Action action) {
-        ArrayList<User> users = database.getUsersData();
-        ArrayList<Movie> movies = database.getMoviesData();
-        ArrayList<Serial> serials = database.getSerialsData();
+        ArrayList<User> users = new ArrayList<>(database.getUsersData());
+        ArrayList<Movie> movies = new ArrayList<>(database.getMoviesData());
+        ArrayList<Serial> serials = new ArrayList<>(database.getSerialsData());
         User userGood = null;
         for (User user : users) {
             if (user.getUsername().equals(action.getUsername())) {
@@ -426,33 +468,36 @@ public final class User {
                 break;
             }
         }
-        Comparator<Movie> comparator;
-        // sorting the movies by grade
-        comparator = Comparator.comparing(Movie::getGrade);
-        // 2nd criteria is the title
-        comparator = comparator.thenComparing(Video::getTitle);
-        movies.sort(comparator);
-        // reverse the arraylist so the highest graded movie is the first
-        Collections.reverse(movies);
-        Comparator<Serial> comparator2;
-        comparator2 = Comparator.comparing(Serial::getGrade);
-        comparator2 = comparator2.thenComparing(Serial::getTitle);
-        serials.sort(comparator2);
-        Collections.reverse(serials);
-        // iterating through the movies to find an unseen one
-        for (Movie movie : movies) {
-            // if the user hasn't seen the movie, return it
-            assert userGood != null;
-            if (!userGood.history.containsKey(movie.getTitle())) {
-                return movie.getTitle();
+        ArrayList<Video> videos = new ArrayList<>(movies);
+        videos.addAll(serials);
+        for (Video video : videos) {
+            if (video instanceof Movie) {
+                ((Movie) video).getFinalGrade();
+                video.setVideoGrade(((Movie) video).getGrade());
+            } else if (video instanceof Serial) {
+                Double serialGrade = ((Serial) video).myGetGrade();
+                video.setVideoGrade(serialGrade);
             }
         }
-        // iterating through the serials to find an unseen one
-        for (Serial serial : serials) {
-            // if the user hasn't seen the serial, return it
+        // setting the favorite occurrences for movies
+        Comparator<Video> comparator;
+        // sort by grades
+        comparator = Comparator.comparing(Video::getVideoGrade);
+//        comparator = comparator.thenComparing(Video::getTitle);
+        videos.sort(comparator);
+        for (Video video : videos) {
+            if (video.getVideoGrade() != 0
+                && !userGood.getHistory().containsKey(video.getTitle())) {
+                Collections.reverse(videos);
+                break;
+            }
+        }
+        // reverse the arraylist so the first movie is the highest graded
+        for (Video video : videos) {
+            // if the user hasn't seen the movie yet, return it
             assert userGood != null;
-            if (!userGood.history.containsKey(serial.getTitle())) {
-                return serial.getTitle();
+            if (!userGood.getHistory().containsKey(video.getTitle())) {
+                return video.getTitle();
             }
         }
         return null;
@@ -466,35 +511,47 @@ public final class User {
      */
     public static String favoriteRecommendation(final Database database,
                                                 final Action action) {
-        ArrayList<User> users = database.getUsersData();
-        ArrayList<Movie> movies = database.getMoviesData();
+        ArrayList<User> users = new ArrayList<>(database.getUsersData());
+        ArrayList<Movie> movies = new ArrayList<>(database.getMoviesData());
+        ArrayList<Serial> serials = new ArrayList<>(database.getSerialsData());
         User userGood = null;
         for (User user : users) {
             if (user.getUsername().equals(action.getUsername())) {
                 userGood = new User(user);
-                break;
             }
         }
-
         assert userGood != null;
         if (!userGood.getSubscriptionType().equals("PREMIUM")) {
             return null;
         }
-        // setting the favorite occurrences for movies
         Movie.mySetIsFavorites(movies, users);
-        Comparator<Movie> comparator;
-        // sort by grades
-        comparator = Comparator.comparing(Movie::getIsFavorite);
-        // 2nd criteria is the title
-        comparator = comparator.thenComparing(Video::getTitle);
-        movies.sort(comparator);
-        // reverse the arraylist so the first movie is the highest graded
-        Collections.reverse(movies);
-        for (Movie movie : movies) {
-            // if the user hasn't seen the movie yet, return it
-            if (!userGood.getHistory().containsKey(movie.getTitle())) {
-                return movie.getTitle();
+        Serial.mySetIsFavoriteSerial(serials, users);
+        ArrayList<Video> videos = new ArrayList<>(movies);
+        videos.addAll(serials);
+        int max = 0;
+        String title = null;
+        for (Video video : videos) {
+            if (video instanceof Movie) {
+                video.setVideoIsFavorite(((Movie) video).getIsFavorite());
+            } else if (video instanceof Serial) {
+                video.setVideoIsFavorite(((Serial) video).getIsFavorite());
             }
+        }
+//        // setting the favorite occurrences for movies
+//        Comparator<Video> comparator;
+//        // sort by grades
+//        comparator = Comparator.comparing(Video::getVideoIsFavorite);
+//        // reverse the arraylist so the first movie is the most favorite
+//        videos.sort(comparator);
+        for (Video video : videos) {
+            if (video.getVideoIsFavorite() > max
+                && !userGood.getHistory().containsKey(video.getTitle())) {
+                max = video.getVideoIsFavorite();
+                title = video.getTitle();
+            }
+        }
+        if (max != 0) {
+            return title;
         }
         return null;
     }
