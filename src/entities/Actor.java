@@ -1,5 +1,6 @@
 package entities;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Map;
 
@@ -87,8 +88,8 @@ public final class Actor {
      * @return an arraylist of Strings, which has the names of actors
      */
     public static ArrayList<String> average(final Database database, final Action action) {
-        ArrayList<Movie> movies = database.getMoviesData();
-        ArrayList<Actor> actors = database.getActorsData();
+        ArrayList<Movie> movies = new ArrayList<>(database.getMoviesData());
+        ArrayList<Actor> actors = filterActors(database, action);
         double rate;
         int count;
         for (Actor actor : actors) {
@@ -104,33 +105,37 @@ public final class Actor {
                         count++;
                     }
                 }
-                if (count != 0) {
-                    // setting the average rate of an actor
-                    actor.setAvgRate(rate, count);
-                }
             }
             // doing the same for serials
             for (Serial serial : database.getSerialsData()) {
                 if (serial.getCast().contains(actor.getName())) {
                     if (serial.getGrade() != 0) {
                         rate += serial.getFinalGrade();
+                        count++;
                     }
                 }
-                actor.setAvgRate(rate, 1); // 1 meaning 1 serial
+            }
+            if (count != 0) {
+                // setting the average rate of an actor
+                actor.setAvgRate(rate, count);
             }
         }
-
+        actors.removeIf(actor ->
+                        actor.getAvgRate() == 0);
         // sorting by average rate
         Comparator<Actor> comparator = Comparator.comparing(Actor::getAvgRate);
         // 2nd criteria is the name
         comparator = comparator.thenComparing(Actor::getName);
         actors.sort(comparator);
+        if (!action.getSortType().equals("asc")) {
+            Collections.reverse(actors);
+        }
         ArrayList<String> actorsReturn = new ArrayList<>();
         int i = 0;
         // indexing through actors
         for (Actor actor : actors) {
             // stop if all actors wanted are added
-            if (i >= action.getNumber()) {
+            if (i == action.getNumber()) {
                 break;
             } else if (actor.getAvgRate() != 0) {
                 // adding to the list of names
@@ -149,10 +154,9 @@ public final class Actor {
      */
     public static ArrayList<Actor> filterActors(final Database database,
                                                 final Action action) {
-        ArrayList<Actor> actors = database.getActorsData();
-        String aux = "aux";
+        ArrayList<Actor> actors = new ArrayList<>(database.getActorsData());
         // magic number
-        int magicNumber = aux.length();
+        int magicNumber = 3;
         if (action.getFilters().get(magicNumber) != null) {
             for (String award : action.getFilters().get(magicNumber)) {
                 // if an actor does not contain an award, remove it from the
@@ -221,6 +225,9 @@ public final class Actor {
             // 2nd criteria is the name
             comparator = comparator.thenComparing(Actor::getName);
             actors.sort(comparator);
+            if (!action.getSortType().equals("asc")) {
+                Collections.reverse(actors);
+            }
             // adding every actor and return the arraylist of actor names
             for (Actor actor : actors) {
                 titles.add(actor.getName());
@@ -237,16 +244,14 @@ public final class Actor {
      */
     public static ArrayList<String> filterDescription(final Database database,
                                                      final Action action) {
-        ArrayList<Actor> actors = database.getActorsData();
-        // filtering by the career description
-        if (action.getFilters().get(2) != null) {
-            for (String word : action.getFilters().get(2)) {
-                actors.removeIf(actor ->
-                        !Utils.getWord(actor.getCareerDescription(), word));
-            }
-        }
+        ArrayList<Actor> actors = filterActors(database, action);
         // adding every actor name in an arraylist then return in
         ArrayList<String> names = new ArrayList<>();
+        Comparator<Actor> comparator = Comparator.comparing(Actor::getName);
+        actors.sort(comparator);
+        if (!action.getSortType().equals("asc")) {
+            Collections.reverse(actors);
+        }
         for (Actor actor : actors) {
             names.add(actor.getName());
         }
