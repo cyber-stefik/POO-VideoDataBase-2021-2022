@@ -1,6 +1,7 @@
 package entities;
 import action.Action;
 import database.Database;
+import utils.Utils;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -45,10 +46,12 @@ public final class Movie extends Video {
      */
     public void getFinalGrade() {
         double sum = 0;
-        for (Double rating : ratings) {
+        for (Double rating : this.ratings) {
             sum += rating;
         }
-        this.grade = sum / ratings.size();
+        if (this.ratings.size() != 0) {
+            this.setGrade(sum  / this.ratings.size());
+        }
     }
 
     /**
@@ -99,6 +102,33 @@ public final class Movie extends Video {
         this.isFavorite = isFavorite;
     }
 
+
+
+    public static ArrayList<Movie> filterMovies(final Database database,
+                                                final Action action) {
+        ArrayList<Movie> movies = new ArrayList<>(database.getMoviesData());
+        // magic number
+        int magicNumber = 0;
+        if (action.getFilters().get(magicNumber).get(0) != null) {
+            for (String year : action.getFilters().get(magicNumber)) {
+                // if an actor does not contain an award, remove it from the
+                // arraylist
+                movies.removeIf(movie ->
+                        !(movie.getYear() == Integer.valueOf(year)));
+            }
+        }
+        magicNumber = 1;
+        if (action.getFilters().get(magicNumber).get(0) != null) {
+            for (String genre : action.getFilters().get(magicNumber)) {
+                // if an actor does not contain a filter word, remove it from
+                // the arraylist
+                movies.removeIf(movie ->
+                                !movie.getGenres().contains(genre));
+            }
+        }
+        return movies;
+    }
+
     /**
      * @param database database which contains info about every entity
      * @param action the action to be executed
@@ -107,10 +137,12 @@ public final class Movie extends Video {
     public static ArrayList<String> favoriteMovie(final Database database,
                                                   final Action action) {
         // importedLollies you naughty, naughty
-        ArrayList<Movie> movies = database.getMoviesData();
-        ArrayList<User> users = database.getUsersData();
+        ArrayList<Movie> movies = filterMovies(database, action);
+        ArrayList<User> users = new ArrayList<>(database.getUsersData());
         // setting the number of favorite occurrences
         mySetIsFavorites(movies, users);
+        movies.removeIf(movie ->
+                movie.getIsFavorite() == 0);
         // sorting by the number of favorite occurrences
         Comparator<Movie> comparator;
         comparator = Comparator.comparing(Movie::getIsFavorite);
@@ -122,17 +154,13 @@ public final class Movie extends Video {
             Collections.reverse(movies);
         }
         ArrayList<String> titles = new ArrayList<>();
+        int i = 0;
         for (Movie movie : movies) {
-            Integer year = movie.getYear();
-            // verifying filters
-            if (action.getFilters().get(0).get(0) != null) {
-                Integer actionYear = Integer.valueOf(action.getFilters().get(0).get(0));
-                ArrayList<String> genres = movie.getGenres();
-                if (movie.getIsFavorite() != 0
-                        && year.equals(actionYear)
-                        && genres.contains(action.getFilters().get(1).get(0))) {
-                    titles.add(movie.getTitle());
-                }
+            if (i == action.getNumber()) {
+                break;
+            } else {
+                i++;
+                titles.add(movie.getTitle());
             }
         }
         return titles;
@@ -164,7 +192,7 @@ public final class Movie extends Video {
      */
     public static ArrayList<String> longestMovie(final Database database,
                                                  final Action action) {
-        ArrayList<Movie> movies = database.getMoviesData();
+        ArrayList<Movie> movies = filterMovies(database, action);
         ArrayList<String> titles = new ArrayList<>();
         String sortType = action.getSortType();
         Comparator<Movie> comparator;
@@ -177,21 +205,16 @@ public final class Movie extends Video {
         if (!sortType.equals("asc")) {
             Collections.reverse(movies);
         }
+        int i = 0;
         for (Movie movie : movies) {
-            ArrayList<String> genres = movie.getGenres();
-            Integer year = movie.getYear();
-            // verifying filters
-            if (action.getFilters().get(0).get(0) != null
-                && action.getFilters().get(1).get(0) != null) {
-                Integer actionYear = Integer.valueOf(action.getFilters().get(0).get(0));
-                if (movie.getDuration() != 0
-                        && genres.contains(action.getFilters().get(1).get(0))
-                        && year.equals(actionYear)) {
-                    // adding the title
-                    titles.add(movie.getTitle());
-                }
+            if (i == action.getNumber()) {
+                break;
+            } else {
+                titles.add(movie.getTitle());
+                i++;
             }
         }
+
         return titles;
     }
 
@@ -202,7 +225,7 @@ public final class Movie extends Video {
      */
     public static ArrayList<String> ratingMovies(final Database database,
                                                  final Action action) {
-        ArrayList<Movie> movies = database.getMoviesData();
+        ArrayList<Movie> movies = new ArrayList<>(database.getMoviesData());
         ArrayList<String> titles = new ArrayList<>();
         Comparator<Movie> comparator;
         // sorting by grades
@@ -252,11 +275,13 @@ public final class Movie extends Video {
      */
     public static ArrayList<String> mostViewed(final Database database,
                                                final Action action) {
-        ArrayList<Movie> movies = database.getMoviesData();
-        ArrayList<User> users = database.getUsersData();
+        ArrayList<Movie> movies = filterMovies(database, action);
+        ArrayList<User> users = new ArrayList<>(database.getUsersData());
         ArrayList<String> titles = new ArrayList<>();
         // using mySetViews to set the views for every movie
         mySetViews(movies, users);
+        movies.removeIf(movie ->
+                        movie.getViews() == 0);
         Comparator<Movie> comparator;
         // sorting by the number of views
         comparator = Comparator.comparing(Movie::getViews);
@@ -267,17 +292,13 @@ public final class Movie extends Video {
         if (!action.getSortType().equals("asc")) {
             Collections.reverse(movies);
         }
+        int i = 0;
         for (Movie movie : movies) {
-            Integer year = movie.getYear();
-            // verifying filters
-            if (action.getFilters().get(0).get(0) != null) {
-                Integer actionYear = Integer.valueOf(action.getFilters().get(0).get(0));
-                ArrayList<String> genres = movie.getGenres();
-                if (movie.getViews() != 0
-                        && year.equals(actionYear)
-                        && genres.contains(action.getFilters().get(1).get(0))) {
-                    titles.add(movie.getTitle());
-                }
+            if (i == action.getNumber()) {
+                break;
+            } else {
+                i++;
+                titles.add(movie.getTitle());
             }
         }
         return titles;
@@ -294,16 +315,6 @@ public final class Movie extends Video {
                 + ", isFavorite=" + isFavorite
                 + ", popularity=" + popularity
                 + '}';
-    }
-
-    @Override
-    public boolean equals(final Object obj) {
-        return super.equals(obj);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(duration, views, grade);
     }
 
 
