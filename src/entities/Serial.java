@@ -71,11 +71,13 @@ public final class Serial extends Video {
                 // adding the rating of every season
                 x += rating;
             }
-            // y is the rating of every season
-            y += x / season.getRatings().size();
+            if (season.getRatings().size() != 0) {
+                // y is the rating of every season
+                y += x / season.getRatings().size();
+            }
         }
         // returning the final grade
-        this.finalGrade = y / numberOfSeasons;
+        this.finalGrade = y / this.numberOfSeasons;
         return this.finalGrade;
     }
 
@@ -150,6 +152,31 @@ public final class Serial extends Video {
         this.isFavorite = isFavorite;
     }
 
+    public static ArrayList<Serial> filterSerial(final Database database,
+                                                final Action action) {
+        ArrayList<Serial> serials = new ArrayList<>(database.getSerialsData());
+        // magic number
+        int magicNumber = 0;
+        if (action.getFilters().get(magicNumber).get(0) != null) {
+            for (String year : action.getFilters().get(magicNumber)) {
+                // if an actor does not contain an award, remove it from the
+                // arraylist
+                serials.removeIf(serial ->
+                        serial.getYear() != Integer.valueOf(year));
+            }
+        }
+        magicNumber = 1;
+        if (action.getFilters().get(magicNumber).get(0) != null) {
+            for (String genre : action.getFilters().get(magicNumber)) {
+                // if an actor does not contain a filter word, remove it from
+                // the arraylist
+                serials.removeIf(serial ->
+                        !serial.getGenres().contains(genre));
+            }
+        }
+        return serials;
+    }
+
 
 
     /**
@@ -159,8 +186,8 @@ public final class Serial extends Video {
      */
     public static ArrayList<String> longestSerial(final Database database,
                                                   final Action action) {
-        ArrayList<Serial> serials = database.getSerialsData();
-        ArrayList<String> toReturn = new ArrayList<>();
+        ArrayList<Serial> serials = filterSerial(database, action);
+        ArrayList<String> titles = new ArrayList<>();
         String sortType = action.getSortType();
         // setting the duration for every serial
         for (Serial serial : serials) {
@@ -174,23 +201,19 @@ public final class Serial extends Video {
         serials.sort(comparator);
         // if sort type is desc, reverse the arraylist
         if (!sortType.equals("asc")) {
-            Collections.reverse(toReturn);
+            Collections.reverse(serials);
         }
-        // iterate through the serials
+        int i = 0;
         for (Serial serial : serials) {
-            Integer year = serial.getYear();
-            // check filters
-            if (action.getFilters().get(0).get(0) != null) {
-                Integer actionYear = Integer.valueOf(action.getFilters()
-                        .get(0).get(0));
-                if (serial.getDuration() != 0
-                        && year.equals(actionYear)
-                        && serial.getGenres().contains(action.getGenre())) {
-                    toReturn.add(serial.getTitle());
-                }
+            if (i == action.getNumber()) {
+                break;
+            } else {
+                i++;
+                titles.add(serial.getTitle());
             }
         }
-        return toReturn;
+        // iterate through the serials
+        return titles;
     }
 
     /**
@@ -200,19 +223,11 @@ public final class Serial extends Video {
      */
     public static ArrayList<String> favoriteSerial(final Database database,
                                                    final Action action) {
-        ArrayList<Serial> serials = database.getSerialsData();
+        ArrayList<Serial> serials = filterSerial(database, action);
         ArrayList<User> users = database.getUsersData();
         // calculating the number of favorite occurrences in ever user's
         // favorite videos
-        for (Serial serial : serials) {
-            int favorites = 0;
-            for (User user : users) {
-                if (user.getFavoriteVideos().contains(serial.getTitle())) {
-                    favorites++;
-                }
-            }
-            serial.setIsFavorite(favorites);
-        }
+        mySetIsFavoriteSerial(serials, users);
 
         Comparator<Serial> comparator;
         // sort by number of favorite occurrences
@@ -225,24 +240,35 @@ public final class Serial extends Video {
         if (!action.getSortType().equals("asc")) {
             Collections.reverse(serials);
         }
-        ArrayList<String> toReturn = new ArrayList<>();
-        // iterate through the serials
+
+        ArrayList<String> titles = new ArrayList<>();
+        int i = 0;
         for (Serial serial : serials) {
-            Integer year = serial.getYear();
-            String actionGenre = action.getFilters().get(1).get(0);
-            // check the filters
-            if (action.getFilters().get(0).get(0) != null) {
-                Integer actionYear = Integer.valueOf(action.getFilters()
-                        .get(0).get(0));
-                if (serial.getIsFavorite() != 0
-                    && year.equals(actionYear)
-                    && serial.getGenres().contains(actionGenre)) {
-                        toReturn.add(serial.getTitle());
-                }
+            if (i == action.getNumber()) {
+                break;
+            } else {
+                i++;
+                titles.add(serial.getTitle());
             }
         }
+        // iterate through the serials
 
-        return toReturn;
+        return titles;
+    }
+
+    public static void mySetIsFavoriteSerial(ArrayList<Serial> serials,
+                                  ArrayList<User> users) {
+        for (Serial serial : serials) {
+            int favorites = 0;
+            for (User user : users) {
+                if (user.getFavoriteVideos().contains(serial.getTitle())) {
+                    favorites++;
+                }
+            }
+            serial.setIsFavorite(favorites);
+        }
+        serials.removeIf(serial ->
+                serial.getIsFavorite() == 0);
     }
 
     /**
@@ -252,9 +278,14 @@ public final class Serial extends Video {
      */
     public static ArrayList<String> ratingSerials(final Database database,
                                                   final Action action) {
-        ArrayList<Serial> serials = database.getSerialsData();
+        ArrayList<Serial> serials = filterSerial(database, action);
         Comparator<Serial> comparator;
         // sort by grades
+        for (Serial serial : serials) {
+            serial.myGetGrade();
+        }
+        serials.removeIf(serial ->
+                        serial.getGrade() == 0);
         comparator = Comparator.comparing(Serial::getGrade);
         // 2nd criteria is the title
         comparator = comparator.thenComparing(Video::getTitle);
@@ -266,17 +297,13 @@ public final class Serial extends Video {
         }
         ArrayList<String> titles = new ArrayList<>();
         // iterate through the serials
+        int i = 0;
         for (Serial serial : serials) {
-            ArrayList<String> genres = serial.getGenres();
-            // check the filters
-            if (action.getFilters().get(0).get(0) != null) {
-                Integer year = serial.getYear();
-                Integer actionYear = valueOf(action.getFilters().get(0).get(0));
-                if (serial.getGrade() != 0
-                        && genres.contains(action.getFilters().get(1).get(0))
-                        && year.equals(actionYear)) {
-                    titles.add(serial.getTitle());
-                }
+            if (i == action.getNumber()) {
+                break;
+            } else {
+                titles.add(serial.getTitle());
+                i++;
             }
         }
         return titles;
@@ -289,10 +316,12 @@ public final class Serial extends Video {
      */
     public static ArrayList<String> mostViewedSerial(final Database database,
                                                      final Action action) {
-        ArrayList<Serial> serials = database.getSerialsData();
+        ArrayList<Serial> serials = filterSerial(database, action);
         ArrayList<User> users = database.getUsersData();
         // setting the views
         setSerialViews(serials, users);
+        serials.removeIf(serial ->
+                        serial.getViews() == 0);
         Comparator<Serial> comparator;
         // sort by the views
         comparator = Comparator.comparing(Serial::getViews);
@@ -304,18 +333,13 @@ public final class Serial extends Video {
             Collections.reverse(serials);
         }
         ArrayList<String> titles = new ArrayList<>();
+        int i = 0;
         // iterate through the serials
         for (Serial serial : serials) {
-            ArrayList<String> genres = serial.getGenres();
-            // check the filters
-            if (action.getFilters().get(0).get(0) != null) {
-                Integer year = serial.getYear();
-                Integer actionYear = valueOf(action.getFilters().get(0).get(0));
-                if (serial.getViews() != 0
-                        && genres.contains(action.getFilters().get(1).get(0))
-                        && year.equals(actionYear)) {
-                    titles.add(serial.getTitle());
-                }
+            if (i == action.getNumber()) {
+                break;
+            } else {
+                titles.add(serial.getTitle());
             }
         }
         return titles;
