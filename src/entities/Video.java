@@ -7,6 +7,8 @@ public abstract class Video {
     private final int year;
     private final ArrayList<String> cast;
     private final ArrayList<String> genres;
+    private double videoGrade = 0.0;
+    private Integer videoIsFavorite = 0;
 
     public Video(final String title, final int year,
                      final ArrayList<String> cast, final ArrayList<String> genres) {
@@ -51,4 +53,31 @@ public abstract class Video {
         return genres;
     }
 
+    /**
+     * @return
+     */
+    public double getVideoGrade() {
+        return videoGrade;
+    }
+
+    /**
+     * @param finalGrade
+     */
+    public void setVideoGrade(final double finalGrade) {
+        this.videoGrade = finalGrade;
+    }
+
+    /**
+     * @return
+     */
+    public Integer getVideoIsFavorite() {
+        return videoIsFavorite;
+    }
+
+    /**
+     * @param videoIsFavorite
+     */
+    public void setVideoIsFavorite(final Integer videoIsFavorite) {
+        this.videoIsFavorite = videoIsFavorite;
+    }
 }

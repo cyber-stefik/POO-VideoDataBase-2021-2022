@@ -1,2 +1,4 @@
 Starting audit...
+[ERROR] D:\github\TemaPOO2021-2022\.\src\entities\Actor.java:159:27: '3' is a magic number. [MagicNumber]
 Audit done.
+Checkstyle ends with 1 errors.
