@@ -9,6 +9,7 @@ import fileio.Writer;
 import org.json.simple.JSONArray;
 
 import java.io.IOException;
+import java.util.ArrayList;
 
 public final class Query {
     private Query() { }
@@ -34,9 +35,10 @@ public final class Query {
                                 + Actor.average(database, action);
                         break;
                     case "awards":
-                        if (Actor.actorAwards(database, action) != null) {
+                        ArrayList<String> actorAwards = Actor.actorAwards(database, action);
+                        if (actorAwards != null) {
                             msg = "Query result: "
-                                    + Actor.actorAwards(database, action);
+                                    + actorAwards;
                         } else {
                             msg = "Query result: []";
                         }
@@ -93,7 +95,7 @@ public final class Query {
                                 action);
                         break;
                     case "most_viewed":
-                        if (Serial.mostViewedSerial(database, action).size() == 0) {
+                        if (Serial.mostViewedSerial(database, action).size() != 0) {
                             msg = "Query result: " + Serial.mostViewedSerial(
                                     database, action);
                         } else {
